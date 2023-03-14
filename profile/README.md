@@ -7,6 +7,6 @@ We’re 100% remote and support work-life balance.
 We encourage diverse candidates from all over the world to apply.
 
 ## Get Involved 🤝
-We are always looking for talented individuals to join our team, and we welcome collaboration and partnerships with like-minded organizations. If you are interested in learning more about our work or getting involved, please contact us at denis@eiwa.ai 📧.
+We are always looking for talented individuals to join our team, and we welcome collaboration and partnerships with like-minded organizations. If you are interested in learning more about our work or getting involved, please contact us at denis@eiwa.ai or julia@iewa.ai 📧.
 
 "We’re here to put a dent in the universe. Otherwise why else even be here?”. — Steve Jobs
