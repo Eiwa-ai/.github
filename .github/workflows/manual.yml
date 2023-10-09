@@ -19,8 +19,8 @@ jobs:
       - uses: actions/checkout@v2
       - uses: micnncim/action-label-syncer@v1
         with:
-          manifest: eiwa-ai/.github/labels.yml
+          manifest: https://github.com/Eiwa-ai/.github/blob/main/labels.yml
           repository: |
-              eiwa-ai/.github/
-              eiwa-ai/.github-private/
+              https://github.com/Eiwa-ai/.github/
+              https://github.com/Eiwa-ai/.github-private/
           token: ${{ secrets.PERSONAL_TOKEN }}
