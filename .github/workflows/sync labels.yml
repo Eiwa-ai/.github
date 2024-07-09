@@ -1,17 +1,53 @@
-name: Sync labels
+name: Sync Labels Across Organization
+
 on:
   push:
     branches:
-      - master
+      - main  # or master, depending on your default branch name
     paths:
-      - path/to/manifest/labels.yml
+      - '.github/labels.yml'
+  workflow_dispatch:  # Allow manual triggering
+
 jobs:
-  build:
+  sync-labels:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: micnncim/action-label-syncer@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets. ORG_PAT }}
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Get list of organization repositories
+        id: org-repos
+        uses: actions/github-script@v6
         with:
-          manifest: path/to/manifest/labels.yml
+          github-token: ${{ secrets.ORG_PAT }}
+          script: |
+            const org = context.repo.owner;
+            const repos = await github.paginate(github.rest.repos.listForOrg, {
+              org: org,
+              type: 'all'
+            });
+            return repos.map(repo => repo.name);
+
+      - name: Sync labels for each repository
+        uses: micnncim/action-label-syncer@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.ORG_PAT }}
+        with:
+          manifest: .github/labels.yml
+          repository: ${{ github.repository }}
+          prune: true
+
+      - name: Sync labels across all repositories
+        uses: actions/github-script@v6
+        env:
+          REPOS: ${{ steps.org-repos.outputs.result }}
+        with:
+          github-token: ${{ secrets.ORG_PAT }}
+          script: |
+            const fs = require('fs');
+            const yaml = require('js-yaml');
+            
+            const labelsYml = fs.readFileSync('.github/labels.yml', 'utf8');
+            const labels = yaml.load(labelsYml);
+            
+            const re
