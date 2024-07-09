@@ -1,71 +1,43 @@
 - name: bug
   description: Something isn't working as expected
-  color: d73a4a
+  color: '#d73a4a'
 
 - name: feature
-  description: New functionality request
-  color: 0e8a16
+  description: New feature or request
+  color: '#0e8a16'
 
 - name: enhancement
   description: Improvement to existing functionality
-  color: a2eeef
+  color: '#a2eeef'
 
 - name: documentation
-  description: Changes or additions to documentation
-  color: 0075ca
+  description: Improvements or additions to documentation
+  color: '#0075ca'
 
-- name: question
-  description: Questions or discussions about the project
-  color: d876e3
+- name: performance
+  description: Performance improvement
+  color: '#fbca04'
 
-- name: in progress
-  description: Work is actively being done on this
-  color: fbca04
+- name: security
+  description: Security-related issue or improvement
+  color: '#ee0701'
 
-- name: review needed
-  description: Ready for review
-  color: fbde2d
+- name: refactor
+  description: Code refactoring without changing functionality
+  color: '#3e4b9e'
 
-- name: on hold
-  description: Not currently being worked on, waiting for something
-  color: d93f0b
+- name: tests
+  description: Adding or improving tests
+  color: '#c2e0c6'
 
-- name: critical
-  description: Requires immediate attention
-  color: b60205
+- name: ci/cd
+  description: Changes to CI/CD pipeline
+  color: '#0052cc'
 
-- name: high
-  description: Important but not urgent
-  color: d93f0b
+- name: dependencies
+  description: Updating or managing dependencies
+  color: '#5319e7'
 
-- name: medium
-  description: Standard priority
-  color: 0e8a16
-
-- name: low
-  description: Nice to have, can be delayed
-  color: c2e0c6
-
-- name: UI
-  description: User interface related
-  color: d4c5f9
-
-- name: backend
-  description: Backend or server-related
-  color: 006b75
-
-- name: API
-  description: API or service related
-  color: 5319e7
-
-- name: small
-  description: A task that can be done quickly
-  color: fad8c7
-
-- name: medium task
-  description: A task that may take some time
-  color: ffd3bf
-
-- name: large
-  description: A significant task or feature
-  color: ff887c
+- name: help wanted
+  description: Extra attention is needed
+  color: '#008672'
