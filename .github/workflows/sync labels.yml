@@ -1,12 +1,10 @@
-name: Sync Labels Across Organization
+name: Sync Labels
 
 on:
   push:
-    branches:
-      - main  # or master, depending on your default branch name
     paths:
       - '.github/labels.yml'
-  workflow_dispatch:  # Allow manual triggering
+  workflow_dispatch:
 
 jobs:
   sync-labels:
@@ -15,69 +13,54 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Get list of organization repositories
-        id: org-repos
-        uses: actions/github-script@v6
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
-          github-token: ${{ secrets.ORG_PAT }}
-          script: |
-            const org = context.repo.owner;
-            const repos = await github.paginate(github.rest.repos.listForOrg, {
-              org: org,
-              type: 'all'
-            });
-            return repos.map(repo => repo.full_name);
-        
-      - name: Sync labels for each repository
-        uses: actions/github-script@v6
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install PyGithub PyYAML
+
+      - name: Sync labels
         env:
           GITHUB_TOKEN: ${{ secrets.ORG_PAT }}
-        with:
-          github-token: ${{ secrets.ORG_PAT }}
-          script: |
-            const repositories = ${{ steps.org-repos.outputs.result }};
-            const fs = require('fs');
-            const yaml = require('js-yaml');
-            
-            const labelsYml = fs.readFileSync('.github/labels.yml', 'utf8');
-            const labels = yaml.load(labelsYml);
-            
-            for (const repo of repositories) {
-              await github.rest.issues.listLabelsForRepo({
-                owner: repo.split('/')[0],
-                repo: repo.split('/')[1]
-              }).then(async ({data: currentLabels}) => {
-                const currentLabelNames = currentLabels.map(label => label.name);
-                const newLabelNames = labels.map(label => label.name);
-                
-                // Remove old labels
-                for (const label of currentLabelNames) {
-                  if (!newLabelNames.includes(label)) {
-                    await github.rest.issues.deleteLabel({
-                      owner: repo.split('/')[0],
-                      repo: repo.split('/')[1],
-                      name: label
-                    });
-                  }
-                }
-                
-                // Merge duplicated labels
-                for (const label of labels) {
-                  await github.rest.issues.createLabel({
-                    owner: repo.split('/')[0],
-                    repo: repo.split('/')[1],
-                    ...label
-                  }).catch(async (err) => {
-                    if (err.status === 422) {
-                      // Label already exists, update it
-                      await github.rest.issues.updateLabel({
-                        owner: repo.split('/')[0],
-                        repo: repo.split('/')[1],
-                        name: label.name,
-                        ...label
-                      });
-                    }
-                  });
-                }
-              });
-            }
+          ORG_NAME: ${{ secrets.ORG_NAME }}
+        run: |
+          python - <<EOF
+          import os
+          import yaml
+          from github import Github
+
+          def get_label_config():
+              with open('.github/labels.yml', 'r') as file:
+                  return yaml.safe_load(file)
+
+          def sync_labels(repo, label_config):
+              existing_labels = {label.name: label for label in repo.get_labels()}
+              
+              for label in label_config:
+                  name = label['name']
+                  if name in existing_labels:
+                      existing_label = existing_labels[name]
+                      if (existing_label.color != label['color'].lstrip('#') or
+                          existing_label.description != label['description']):
+                          existing_label.edit(name, label['color'].lstrip('#'), label['description'])
+                      del existing_labels[name]
+                  else:
+                      repo.create_label(name, label['color'].lstrip('#'), label['description'])
+              
+              for label in existing_labels.values():
+                  label.delete()
+
+          g = Github(os.environ['GITHUB_TOKEN'])
+          org = g.get_organization(os.environ['ORG_NAME'])
+          label_config = get_label_config()
+
+          for repo in org.get_repos():
+              print(f"Syncing labels for {repo.name}")
+              sync_labels(repo, label_config)
+
+          print("Label sync completed for all repositories.")
+          EOF
