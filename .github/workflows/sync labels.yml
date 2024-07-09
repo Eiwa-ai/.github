@@ -30,40 +30,63 @@ jobs:
         run: |
           python - <<EOF
           import os
+          import sys
           import yaml
-          from github import Github
+          from github import Github, GithubException
 
           def load_labels_from_yaml(file_path):
-              with open(file_path, 'r') as file:
-                  return yaml.safe_load(file)
+              try:
+                  with open(file_path, 'r') as file:
+                      return yaml.safe_load(file)
+              except Exception as e:
+                  print(f"Error loading labels from YAML: {e}")
+                  sys.exit(1)
 
           def sync_labels(repo, labels_config):
-              existing_labels = {label.name.lower(): label for label in repo.get_labels()}
-              
-              for label in labels_config:
-                  name = label['name']
-                  color = label['color']
-                  description = label.get('description', '')
+              try:
+                  existing_labels = {label.name.lower(): label for label in repo.get_labels()}
                   
-                  if name.lower() in existing_labels:
-                      existing_label = existing_labels[name.lower()]
-                      if existing_label.color != color or existing_label.description != description:
-                          existing_label.edit(name, color, description)
-                      del existing_labels[name.lower()]
-                  else:
-                      repo.create_label(name, color, description)
-              
-              # Remove old labels that don't match the config
-              for label in existing_labels.values():
-                  label.delete()
+                  for label in labels_config:
+                      name = label['name']
+                      color = label['color']
+                      description = label.get('description', '')
+                      
+                      if name.lower() in existing_labels:
+                          existing_label = existing_labels[name.lower()]
+                          if existing_label.color != color or existing_label.description != description:
+                              existing_label.edit(name, color, description)
+                          del existing_labels[name.lower()]
+                      else:
+                          repo.create_label(name, color, description)
+                  
+                  # Remove old labels that don't match the config
+                  for label in existing_labels.values():
+                      label.delete()
+              except GithubException as e:
+                  print(f"GitHub API error: {e}")
+                  sys.exit(1)
 
-          g = Github(os.environ['GITHUB_TOKEN'])
-          org = g.get_organization(os.environ['ORG_NAME'])
-          labels_config = load_labels_from_yaml('.github/labels.yml')
+          # Check if GITHUB_TOKEN is set
+          if not os.environ.get('GITHUB_TOKEN'):
+              print("Error: GITHUB_TOKEN is not set or empty")
+              sys.exit(1)
 
-          for repo in org.get_repos():
-              print(f"Syncing labels for {repo.name}")
-              sync_labels(repo, labels_config)
+          # Check if ORG_NAME is set
+          if not os.environ.get('ORG_NAME'):
+              print("Error: ORG_NAME is not set or empty")
+              sys.exit(1)
 
-          print("Label sync completed.")
+          try:
+              g = Github(os.environ['GITHUB_TOKEN'])
+              org = g.get_organization(os.environ['ORG_NAME'])
+              labels_config = load_labels_from_yaml('.github/labels.yml')
+
+              for repo in org.get_repos():
+                  print(f"Syncing labels for {repo.name}")
+                  sync_labels(repo, labels_config)
+
+              print("Label sync completed.")
+          except Exception as e:
+              print(f"An unexpected error occurred: {e}")
+              sys.exit(1)
           EOF
