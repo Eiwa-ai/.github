@@ -1,28 +1,4 @@
-name: Synchronize Labels
-
-on:
-  schedule:
-    - cron: '0 0 * * 0'  # Run weekly on Sunday at midnight
-  workflow_dispatch:  # Allow manual triggering
-
-jobs:
-  sync-labels:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.x'
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install PyGithub PyYAML requests
-
-      - name: Synchronize Labels
+- name: Synchronize Labels
         env:
           GITHUB_TOKEN: ${{ secrets.ORG_PAT }}
         run: |
@@ -37,18 +13,23 @@ jobs:
               response.raise_for_status()
               return yaml.safe_load(response.text)
 
+          def format_color(color):
+              # Remove '#' if present and ensure 6 characters
+              return color.lstrip('#').zfill(6)
+
           def sync_labels(repo, label_definitions):
               existing_labels = {label.name.lower(): label for label in repo.get_labels()}
               
               for label_def in label_definitions:
                   name = label_def['name'].lower()
+                  color = format_color(label_def['color'])
                   if name in existing_labels:
                       label = existing_labels[name]
-                      if label.color != label_def['color'] or label.description != label_def.get('description', ''):
-                          label.edit(name=label_def['name'], color=label_def['color'], description=label_def.get('description', ''))
+                      if label.color != color or label.description != label_def.get('description', ''):
+                          label.edit(name=label_def['name'], color=color, description=label_def.get('description', ''))
                       del existing_labels[name]
                   else:
-                      repo.create_label(name=label_def['name'], color=label_def['color'], description=label_def.get('description', ''))
+                      repo.create_label(name=label_def['name'], color=color, description=label_def.get('description', ''))
               
               for label in existing_labels.values():
                   label.delete()
