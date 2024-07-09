@@ -36,6 +36,9 @@ jobs:
 
           def get_label_config():
               labels_file = '.github/labels.yml'
+              print(f"Current working directory: {os.getcwd()}")
+              print("Contents of current directory:")
+              os.system('ls -R')
               if not os.path.exists(labels_file):
                   print(f"Error: {labels_file} not found. Make sure the file exists in your repository.")
                   sys.exit(1)
@@ -68,21 +71,18 @@ jobs:
               print("Error: ORG_NAME is not set. Please make sure to set the ORG_NAME secret.")
               sys.exit(1)
 
-          # Ensure we're in the repository root directory
-          repo_root = os.environ.get('GITHUB_WORKSPACE', '.')
-          os.chdir(repo_root)
-
           try:
+              label_config = get_label_config()
+
               g = Github(os.environ['GITHUB_TOKEN'])
               org = g.get_organization(os.environ['ORG_NAME'])
-              label_config = get_label_config()
 
               for repo in org.get_repos():
                   print(f"Syncing labels for {repo.name}")
                   sync_labels(repo, label_config)
 
               print("Label sync completed for all repositories.")
-          except GithubException as e:
+          except Exception as e:
               print(f"Error: {e}")
               sys.exit(1)
           EOF
