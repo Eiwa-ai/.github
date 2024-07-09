@@ -30,8 +30,9 @@ jobs:
         run: |
           python - <<EOF
           import os
+          import sys
           import yaml
-          from github import Github
+          from github import Github, GithubException
 
           def get_label_config():
               with open('.github/labels.yml', 'r') as file:
@@ -54,13 +55,26 @@ jobs:
               for label in existing_labels.values():
                   label.delete()
 
-          g = Github(os.environ['GITHUB_TOKEN'])
-          org = g.get_organization(os.environ['ORG_NAME'])
-          label_config = get_label_config()
+          # Check if required environment variables are set
+          if not os.environ.get('GITHUB_TOKEN'):
+              print("Error: GITHUB_TOKEN is not set. Please make sure to set the ORG_PAT secret.")
+              sys.exit(1)
 
-          for repo in org.get_repos():
-              print(f"Syncing labels for {repo.name}")
-              sync_labels(repo, label_config)
+          if not os.environ.get('ORG_NAME'):
+              print("Error: ORG_NAME is not set. Please make sure to set the ORG_NAME secret.")
+              sys.exit(1)
 
-          print("Label sync completed for all repositories.")
+          try:
+              g = Github(os.environ['GITHUB_TOKEN'])
+              org = g.get_organization(os.environ['ORG_NAME'])
+              label_config = get_label_config()
+
+              for repo in org.get_repos():
+                  print(f"Syncing labels for {repo.name}")
+                  sync_labels(repo, label_config)
+
+              print("Label sync completed for all repositories.")
+          except GithubException as e:
+              print(f"Error: {e}")
+              sys.exit(1)
           EOF
