@@ -35,7 +35,11 @@ jobs:
           from github import Github, GithubException
 
           def get_label_config():
-              with open('.github/labels.yml', 'r') as file:
+              labels_file = os.path.join(os.environ['GITHUB_WORKSPACE'], '.github', 'labels.yml')
+              if not os.path.exists(labels_file):
+                  print(f"Error: {labels_file} does not exist.")
+                  sys.exit(1)
+              with open(labels_file, 'r') as file:
                   return yaml.safe_load(file)
 
           def sync_labels(repo, label_config):
@@ -77,4 +81,13 @@ jobs:
           except GithubException as e:
               print(f"Error: {e}")
               sys.exit(1)
+          except Exception as e:
+              print(f"Unexpected error: {e}")
+              sys.exit(1)
           EOF
+
+      - name: Check for errors
+        if: failure()
+        run: |
+          echo "The label sync action failed. Please check the logs for more information."
+          exit 1
