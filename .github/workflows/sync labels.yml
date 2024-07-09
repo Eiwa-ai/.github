@@ -35,9 +35,9 @@ jobs:
           from github import Github, GithubException
 
           def get_label_config():
-              labels_file = os.path.join(os.environ['GITHUB_WORKSPACE'], '.github', 'labels.yml')
+              labels_file = '.github/labels.yml'
               if not os.path.exists(labels_file):
-                  print(f"Error: {labels_file} does not exist.")
+                  print(f"Error: {labels_file} not found. Make sure the file exists in your repository.")
                   sys.exit(1)
               with open(labels_file, 'r') as file:
                   return yaml.safe_load(file)
@@ -68,6 +68,10 @@ jobs:
               print("Error: ORG_NAME is not set. Please make sure to set the ORG_NAME secret.")
               sys.exit(1)
 
+          # Ensure we're in the repository root directory
+          repo_root = os.environ.get('GITHUB_WORKSPACE', '.')
+          os.chdir(repo_root)
+
           try:
               g = Github(os.environ['GITHUB_TOKEN'])
               org = g.get_organization(os.environ['ORG_NAME'])
@@ -81,13 +85,4 @@ jobs:
           except GithubException as e:
               print(f"Error: {e}")
               sys.exit(1)
-          except Exception as e:
-              print(f"Unexpected error: {e}")
-              sys.exit(1)
           EOF
-
-      - name: Check for errors
-        if: failure()
-        run: |
-          echo "The label sync action failed. Please check the logs for more information."
-          exit 1
